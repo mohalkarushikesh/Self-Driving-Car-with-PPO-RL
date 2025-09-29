@@ -75,7 +75,7 @@ class SelfDrivingEnv(gym.Env):
         self.start_y = int(self.window_height * 0.85)
 
         self.steps = 0
-        self.max_episode_steps = 2000
+        self.max_episode_steps = 5000
         
         # Track progress and previous states for better rewards
         self.previous_action = np.array([0.0, 0.0, 0.0]) if continuous else 0
@@ -87,8 +87,8 @@ class SelfDrivingEnv(gym.Env):
         # Track following variables
         self.last_position = (self.start_x, self.start_y)
         self.stuck_counter = 0
-        self.stuck_threshold = 50  # Steps before considering stuck
-        self.min_movement_threshold = 5.0  # Minimum pixels to move per step
+        self.stuck_threshold = 200  # Much more lenient
+        self.min_movement_threshold = 1.0  # Much more lenient
         self.last_angle = 0.0
 
     def _init_pygame(self):
@@ -177,7 +177,6 @@ class SelfDrivingEnv(gym.Env):
 
     def _calculate_forward_movement_reward(self):
         """Reward for moving forward along the track in any direction"""
-        # Calculate movement in the direction the car is facing
         current_pos = (self.car.x, self.car.y)
         last_pos = self.last_position
         
@@ -186,25 +185,12 @@ class SelfDrivingEnv(gym.Env):
         dy = current_pos[1] - last_pos[1]
         movement_distance = np.sqrt(dx**2 + dy**2)
         
-        if movement_distance < 0.1:  # Very small movement
-            return -0.01  # Small penalty for not moving
-        
-        # Calculate the direction the car is facing
-        car_angle_rad = np.radians(self.car.angle)
-        forward_dx = np.sin(car_angle_rad)
-        forward_dy = -np.cos(car_angle_rad)
-        
-        # Calculate how much of the movement is in the forward direction
-        forward_component = (dx * forward_dx + dy * forward_dy) / movement_distance
-        
-        if forward_component > 0.5:  # Moving mostly forward
-            return movement_distance * 0.1  # Strong reward for forward movement
-        elif forward_component > 0:  # Moving somewhat forward
-            return movement_distance * 0.05  # Moderate reward
-        elif forward_component > -0.5:  # Moving sideways
-            return movement_distance * 0.02  # Small reward for any movement
-        else:  # Moving backward
-            return movement_distance * -0.05  # Penalty for backward movement
+        if movement_distance < 0.01:  # Very small movement threshold
+            return -0.001  # Very small penalty
+        elif movement_distance > 0.1:  # Good movement
+            return movement_distance * 0.2  # Increased reward
+        else:
+            return movement_distance * 0.1  # Moderate reward
 
     def _calculate_speed_reward(self):
         """Reward for maintaining good speed"""
@@ -361,15 +347,19 @@ class SelfDrivingEnv(gym.Env):
 
         # **Check for termination**
         if self.track.is_off_track(self.car):
+            print(f"❌ Episode ended: Car went off track at step {self.steps}")
             reward = -1.0
             terminated = True
 
         # **Terminate if stuck for too long**
         if self.stuck_counter > self.stuck_threshold * 2:
+            print(f"❌ Episode ended: Car stuck for {self.stuck_counter} steps")
             reward = -0.5
             terminated = True
 
         truncated = self.steps >= self.max_episode_steps
+        if truncated:
+            print(f"❌ Episode ended: Max steps reached ({self.steps})")
         
         # Store current action and position for next step
         if self.continuous:
