@@ -1,0 +1,3 @@
+- put images into /images folder
+  - car.png
+  - track.png   
