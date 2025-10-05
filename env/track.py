@@ -104,7 +104,13 @@ class Track:
         
         # Create mask from the track surface
         self.track_collision_mask = pygame.mask.from_surface(self.track_mask)
-    
+        
+        # Debug: Print track detection stats
+        total_pixels = self.width * self.height
+        track_pixels = sum(1 for x in range(self.width) for y in range(self.height) 
+                          if self.track_mask.get_at((x, y)) == (255, 255, 255))
+        print(f"Track detection: {track_pixels}/{total_pixels} pixels detected as track ({track_pixels/total_pixels*100:.1f}%)")
+
     def _is_track_pixel(self, pixel_color):
         """Determine if a pixel is part of the track"""
         # Convert to RGB if needed
@@ -167,8 +173,8 @@ class Track:
         current_x = x
         current_y = y
         
-        # Step along the ray
-        for distance in range(1, max_distance + 1):
+        # Step along the ray with smaller steps for better accuracy
+        for distance in range(1, max_distance + 1, 2):  # Step by 2 for efficiency
             # Calculate next position
             current_x = x + dx * distance
             current_y = y + dy * distance
