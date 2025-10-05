@@ -7,37 +7,44 @@ class Car:
     def __init__(self, x, y, headless=False):
         self.headless = headless
         
-        # Only initialize pygame if not headless AND pygame not already initialized
-        if not self.headless and not pygame.get_init():
+        # Initialize pygame for image loading (even in headless mode)
+        if not pygame.get_init():
+            if headless:
+                # Set dummy video driver for headless mode
+                os.environ['SDL_VIDEODRIVER'] = 'dummy'
             pygame.init()
-            if pygame.display.get_surface() is None:
-                pygame.display.set_mode((1500, 800))
+            
+        # Create a minimal display surface for image conversion
+        if pygame.display.get_surface() is None:
+            pygame.display.set_mode((1, 1))  # Minimal display for image conversion
         
         # Load car image (even in headless mode for collision detection)
         images_dir = os.path.join(os.path.dirname(__file__), "..", "images")
         car_path = os.path.join(images_dir, "car.png")
         
         if os.path.exists(car_path):
+            # Load image and convert
             self.original_image = pygame.image.load(car_path).convert_alpha()
-            # Scale the car to a reasonable size (larger than before)
-            self.original_image = pygame.transform.scale(self.original_image, (100, 100))
         else:
             # Create a simple car if image doesn't exist - make it larger
             self.original_image = pygame.Surface((100, 100), pygame.SRCALPHA)
             pygame.draw.rect(self.original_image, (255, 0, 0), (0, 0, 100, 100))
         
+        # Scale the car to a reasonable size (larger than before)
+        self.original_image = pygame.transform.scale(self.original_image, (100, 100))
+        
         self.image = self.original_image.copy()
         self.rect = self.image.get_rect()
         
-        # Car physics
+        # Car physics - make it faster
         self.x = x
         self.y = y
         self.angle = 0
         self.speed = 0
-        self.max_speed = 8
-        self.acceleration = 0.2
+        self.max_speed = 10  # Increased from 8
+        self.acceleration = 0.4  # Increased from 0.2
         self.friction = 0.95
-        self.turn_speed = 3
+        self.turn_speed = 4  # Increased from 3
         self.angular_velocity = 0
         
         # Car dimensions for collision detection - updated to match image size
