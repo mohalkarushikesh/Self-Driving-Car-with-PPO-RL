@@ -27,7 +27,7 @@ A Pygame-based self-driving car simulation using Proximal Policy Optimization (P
 ![self-driving-car-demo](https://github.com/user-attachments/assets/06707b1c-e5dd-49f3-8427-364662043ca8)
 
 ## Full Demo 
-![Check out full demo here](/Self_Driving_Car_Demo.mp4)
+![Check out full demo here](Self_Driving_Car_Demo.mp4)
 
 ## 🚀 Quick Start
 
