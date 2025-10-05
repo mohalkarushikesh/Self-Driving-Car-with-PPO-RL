@@ -22,6 +22,10 @@ A Pygame-based self-driving car simulation using Proximal Policy Optimization (P
 - **Space**: Brake
 - **ESC**: Exit
 
+## Demo
+
+
+
 ## 🚀 Quick Start
 
 ### 1. Installation
@@ -245,7 +249,7 @@ python train_ppo.py --continuous --timesteps 200000
 
 # Quick visual demo
 # For continuous models
-python demo_model.py --model models/ppo_self_driving_continuous --episodes 10 --continuous
+python demo_model.py --model models/ppo_self_driving_continuous_enhanced --episodes 10 --continuous
 
 # For discrete models  
 python demo_model.py --model models/ppo_self_driving_discrete --episodes 3 --discrete
