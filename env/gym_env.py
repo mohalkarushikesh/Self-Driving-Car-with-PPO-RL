@@ -46,10 +46,14 @@ class SelfDrivingEnv(gym.Env):
             self._pygame_initialized = True
 
         if self.continuous:
-            # throttle [-1,1], steer [-1,1], brake [0,1]
-            self.action_space = spaces.Box(low=np.array([-1.0, -1.0, 0.0], dtype=np.float32),
-                                           high=np.array([1.0, 1.0, 1.0], dtype=np.float32), dtype=np.float32)
+            # Continuous action space: [throttle, steering, brake]
+            self.action_space = spaces.Box(
+                low=np.array([-1.0, -1.0, 0.0], dtype=np.float32),
+                high=np.array([1.0, 1.0, 1.0], dtype=np.float32), 
+                dtype=np.float32
+            )
         else:
+            # Discrete action space: 7 actions
             self.action_space = spaces.Discrete(7)
 
         # Enhanced observation space with more information
@@ -84,11 +88,11 @@ class SelfDrivingEnv(gym.Env):
         self.straight_line_distance = 0.0
         self.last_progress_check = 0
         
-        # Track following variables
+        # Track following variables - more lenient
         self.last_position = (self.start_x, self.start_y)
         self.stuck_counter = 0
-        self.stuck_threshold = 200  # Much more lenient
-        self.min_movement_threshold = 1.0  # Much more lenient
+        self.stuck_threshold = 100  # Reduced from 200
+        self.min_movement_threshold = 0.5  # Reduced from 1.0
         self.last_angle = 0.0
 
     def _init_pygame(self):
@@ -100,6 +104,10 @@ class SelfDrivingEnv(gym.Env):
             self._pygame_initialized = True
 
     def _get_obs(self):
+        # Ensure track exists before sensing
+        if self.track is None:
+            self.track = Track(self.track_path, self.window_width, self.window_height, headless=(self.render_mode != "human"))
+        
         rays = self.car.sense(self.track)
         speed_norm = np.clip(abs(self.car.speed) / max(self.car.max_speed, 1e-6), 0.0, 1.0)
         ang_rad = np.radians(self.car.angle)
@@ -185,22 +193,25 @@ class SelfDrivingEnv(gym.Env):
         dy = current_pos[1] - last_pos[1]
         movement_distance = np.sqrt(dx**2 + dy**2)
         
-        if movement_distance < 0.01:  # Very small movement threshold
-            return -0.001  # Very small penalty
-        elif movement_distance > 0.1:  # Good movement
-            return movement_distance * 0.2  # Increased reward
+        # Encourage faster movement
+        if movement_distance > 0.01:
+            # Reward based on speed - faster movement gets more reward
+            speed_bonus = min(movement_distance * 2.0, 1.0)  # Cap at 1.0
+            return speed_bonus
         else:
-            return movement_distance * 0.1  # Moderate reward
+            return -0.01  # Small penalty for not moving
 
     def _calculate_speed_reward(self):
         """Reward for maintaining good speed"""
         speed_ratio = abs(self.car.speed) / max(self.car.max_speed, 1e-6)
         
-        # Reward moderate to high speed
-        if speed_ratio > 0.3:
-            return speed_ratio * 0.05  # Reward for good speed
+        # Encourage higher speeds
+        if speed_ratio > 0.1:  # Only reward if moving reasonably
+            return speed_ratio * 0.3  # Reward for speed
+        elif speed_ratio > 0.01:  # Small reward for any movement
+            return speed_ratio * 0.1
         else:
-            return -0.02  # Small penalty for being too slow
+            return -0.02  # Penalty for being too slow
 
     def _calculate_center_reward(self, rays):
         """Reward for staying centered on the track"""
@@ -229,50 +240,42 @@ class SelfDrivingEnv(gym.Env):
         # Calculate forward movement based on angle and speed
         forward_movement = -np.cos(np.radians(self.car.angle)) * self.car.speed
         
-        if forward_movement > 0:
-            return 0.02  # Reward for moving forward
+        if forward_movement > 0.1:  # Moving forward with some speed
+            return 0.05  # Higher reward for forward movement
+        elif forward_movement > 0:
+            return 0.02  # Small reward for any forward movement
         else:
-            return -0.01  # Small penalty for going backward
+            return -0.02  # Penalty for going backward
 
     def _calculate_smoothness_penalty(self, action):
         """Penalize erratic steering to reduce shaking"""
         if self.continuous:
-            # Penalize large steering changes
+            # Much smaller penalty to not discourage movement
             steering_change = abs(action[1] - self.previous_action[1])
-            return -steering_change * 0.02  # Reduced penalty
+            return -steering_change * 0.005  # Very small penalty
         else:
             # For discrete actions, penalize rapid direction changes
             if hasattr(self, 'previous_action') and self.previous_action != 0:
                 if (self.previous_action in [3, 5] and action in [4, 6]) or \
                    (self.previous_action in [4, 6] and action in [3, 5]):
-                    return -0.05  # Reduced penalty
+                    return -0.01  # Very small penalty
             return 0.0
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
+        
+        # Create track first if it doesn't exist
         if self.track is None:
             self.track = Track(self.track_path, self.window_width, self.window_height, headless=(self.render_mode != "human"))
+        
+        # Always create new car instance to avoid state issues
         self.car = Car(self.start_x, self.start_y, headless=(self.render_mode != "human"))
         
-        # Fix car orientation - set to -90 degrees to make it face left (horizontal)
-        self.car.angle = -90    
+        # Fix car orientation
+        self.car.angle = -90
         
+        # Reset all tracking variables
         self.steps = 0
-
-        if self.domain_randomization:
-            friction_scale = 0.8 + random.random() * 0.6
-            grip_scale = 0.8 + random.random() * 0.6
-            self.car.randomize_dynamics(friction_scale=friction_scale, grip_scale=grip_scale)
-
-        # Only create display window if rendering
-        if self.render_mode == "human" and self.win is None:
-            if not self._pygame_initialized:
-                self._init_pygame()
-            self.win = pygame.display.set_mode((self.window_width, self.window_height))
-            pygame.display.set_caption("Self-Driving Env")
-            self.clock = pygame.time.Clock()
-
-        # Reset tracking variables
         self.previous_action = np.array([0.0, 0.0, 0.0]) if self.continuous else 0
         self.previous_position = (self.start_x, self.start_y)
         self.total_distance_traveled = 0.0
@@ -282,14 +285,19 @@ class SelfDrivingEnv(gym.Env):
         self.stuck_counter = 0
         self.last_angle = 0.0
         
-        # Fix car orientation again after all resets
-        self.car.angle = -90
-
+        # Reset car physics
+        self.car.speed = 0
+        self.car.angular_velocity = 0
+        
         observation = self._get_obs()
         info = self._get_info()
         return observation, info
 
     def step(self, action):
+        # Ensure track exists
+        if self.track is None:
+            self.track = Track(self.track_path, self.window_width, self.window_height, headless=(self.render_mode != "human"))
+        
         if self.continuous:
             throttle = float(action[0])
             steer = float(action[1])
@@ -316,34 +324,31 @@ class SelfDrivingEnv(gym.Env):
         terminated = False
         rays = self.car.sense(self.track)
         
-        # **IMPROVED REWARD FUNCTION** - Works in all directions
+        # **SIMPLIFIED REWARD FUNCTION** - Focus on movement and staying on track
         base_reward = 0.01  # Small base reward for staying alive
         
-        # **1. FORWARD MOVEMENT REWARD** - Works in any direction
-        forward_reward = self._calculate_forward_movement_reward()
+        # **1. MOVEMENT REWARD** - Reward any movement
+        movement_reward = distance_moved * 0.1  # Direct reward for movement
         
-        # **2. SPEED REWARD** - Encourage movement
-        speed_reward = self._calculate_speed_reward()
+        # **2. SPEED REWARD** - Reward speed
+        speed_ratio = abs(self.car.speed) / max(self.car.max_speed, 1e-6)
+        speed_reward = speed_ratio * 0.1
         
-        # **3. CENTER REWARD** - Stay on track
-        center_reward = self._calculate_center_reward(rays)
+        # **3. CENTER REWARD** - Stay on track (simplified)
+        center_ray = rays[2]  # Center sensor
+        center_reward = center_ray * 0.2  # Strong reward for being centered
         
-        # **4. DIRECTION REWARD** - Move in right direction
-        direction_reward = self._calculate_direction_reward()
+        # **4. CLEARANCE PENALTY** - Avoid walls
+        min_ray = min(rays)
+        clearance_penalty = (1.0 - min_ray) * -0.2  # Strong penalty for being close to walls
         
         # **5. STUCK PENALTY** - Prevent getting stuck
-        stuck_penalty = self._calculate_stuck_penalty()
+        stuck_penalty = 0.0
+        if self.stuck_counter > self.stuck_threshold:
+            stuck_penalty = -0.1
         
-        # **6. SMOOTHNESS PENALTY** - Reduce shaking
-        smoothness_penalty = self._calculate_smoothness_penalty(action)
-        
-        # **7. CLEARANCE PENALTY** - Avoid walls
-        min_ray = min(rays)
-        clearance_penalty = (1.0 - min_ray) * -0.1
-        
-        # **Combine rewards with emphasis on forward movement**
-        reward = (base_reward + forward_reward + speed_reward + center_reward + 
-                 direction_reward + stuck_penalty + smoothness_penalty + clearance_penalty)
+        # **Combine rewards**
+        reward = base_reward + movement_reward + speed_reward + center_reward + clearance_penalty + stuck_penalty
 
         # **Check for termination**
         if self.track.is_off_track(self.car):
