@@ -35,7 +35,7 @@ A Pygame-based self-driving car simulation using Proximal Policy Optimization (P
 
 ```bash
 # Clone the repository
-git clone (https://github.com/mohalkarushikesh/Self-Driving-Car-with-PPO-RL.git)
+git clone https://github.com/mohalkarushikesh/Self-Driving-Car-with-PPO-RL.git
 cd Self-Driving-Car
 
 # Create virtual environment
