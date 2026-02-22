@@ -29,6 +29,69 @@ A Pygame-based self-driving car simulation using Proximal Policy Optimization (P
 ## Full Demo 
 ![Check-out-full-demo-here](Self_Driving_Car_Demo.mp4)
 
+## Flow
+```mermaid
+graph TB
+    subgraph Input["🎮 Input Components"]
+        Track["Track Design"]
+        Sensors["Sensor Data"]
+    end
+    
+    subgraph Simulation["🌍 Simulation Environment"]
+        Pygame["Pygame Simulation Engine"]
+        Physics["Physics & Collision Detection"]
+        Rewards["Reward System"]
+    end
+    
+    subgraph Agent["🤖 RL Agent"]
+        PPO["PPO Algorithm<br/>Policy Optimization"]
+        Actor["Actor Network<br/>Policy π(a|s)"]
+        Critic["Critic Network<br/>Value V(s)"]
+    end
+    
+    subgraph Training["📚 Training Loop"]
+        Collect["1. Experience Collection"]
+        Advantage["2. Compute Advantages"]
+        Update["3. Policy Update<br/>Gradient Descent"]
+        Evaluate["4. Evaluation"]
+    end
+    
+    subgraph Data["💾 Data Management"]
+        Models["Models Directory<br/>Saved Policies"]
+        Logs["Training Logs<br/>Metrics"]
+    end
+    
+    subgraph Output["📊 Outputs"]
+        DemoModel["Demo Model<br/>Inference"]
+        Visualization["Visualization<br/>GIFs & Videos"]
+        Performance["Performance Metrics<br/>Success Rate"]
+    end
+    
+    Track --> Pygame
+    Sensors --> Pygame
+    Pygame --> Physics
+    Physics --> Rewards
+    
+    Rewards --> Collect
+    Pygame --> Collect
+    Collect --> Advantage
+    Advantage --> Actor
+    Advantage --> Critic
+    
+    Actor --> Update
+    Critic --> Update
+    Update --> Evaluate
+    Evaluate --> Models
+    
+    Models --> DemoModel
+    Evaluate --> Logs
+    DemoModel --> Visualization
+    Logs --> Performance
+    
+    Visualization --> Output
+    Performance --> Output
+```
+
 ## 🚀 Quick Start
 
 ### 1. Installation
