@@ -341,3 +341,12 @@ python evaluate_model.py --model models/ppo_self_driving_continuous --episodes 5
 python test_model.py --mode compare --models models/ppo_self_driving_continuous models/ppo_self_driving_discrete
 ```
 
+# MIT License
+
+Copyright (c) [Rushikesh Mohalkar]
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without ...
+
+[Full text available at {Link: Open Source Initiative https://opensource.org/license/mit}]
