@@ -1,0 +1,4 @@
+# Ignore the models directory where trained models are saved
+
+/models/
+
