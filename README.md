@@ -282,7 +282,7 @@ Extend `env/gym_env.py` to add:
 - Implement reward shaping for better convergence
 - Add curriculum learning for complex tracks
 
-## 🤝 Contributing
+### 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -290,11 +290,11 @@ Extend `env/gym_env.py` to add:
 4. Add tests if applicable
 5. Submit a pull request
 
-## 📄 License
+### 📄 License
 
 This project is open source and available under the MIT License.
 
-## 🙏 Acknowledgments
+### 🙏 Acknowledgments
 
 - Pygame for the game engine
 - Gymnasium for RL environment standards
@@ -305,38 +305,38 @@ This project is open source and available under the MIT License.
 
 **Happy Driving!**
 
-# run env 
+### run env 
 ```
 python -m env.main
 ```
 
-# Train a model
+### Train a model
 ```
 python train_ppo.py --continuous --timesteps 200000
-````
+```
 
-# Quick visual demo
-# For continuous models
+### Quick visual demo
+#### For continuous models
 ```
 python demo_model.py --model models/ppo_self_driving_continuous_enhanced --episodes 10 --continuous
 ```
 
-# For discrete models  
+#### For discrete models  
 ```
 python demo_model.py --model models/ppo_self_driving_discrete --episodes 3 --discrete
 ```
 
-# Statistical testing
+#### Statistical testing
 ```
 python test_model.py --model models/ppo_self_driving_continuous --episodes 20 --mode headless
 ```
 
-# Comprehensive evaluation
+#### Comprehensive evaluation
 ```
 python evaluate_model.py --model models/ppo_self_driving_continuous --episodes 50
 ```
 
-# Compare multiple models
+#### Compare multiple models
 ```
 python test_model.py --mode compare --models models/ppo_self_driving_continuous models/ppo_self_driving_discrete
 ```
