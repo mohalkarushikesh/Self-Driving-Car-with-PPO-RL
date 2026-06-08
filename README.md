@@ -306,25 +306,38 @@ This project is open source and available under the MIT License.
 **Happy Driving!**
 
 # run env 
+```
 python -m env.main
+```
 
 # Train a model
+```
 python train_ppo.py --continuous --timesteps 200000
+````
 
 # Quick visual demo
 # For continuous models
+```
 python demo_model.py --model models/ppo_self_driving_continuous_enhanced --episodes 10 --continuous
+```
 
 # For discrete models  
+```
 python demo_model.py --model models/ppo_self_driving_discrete --episodes 3 --discrete
+```
 
 # Statistical testing
+```
 python test_model.py --model models/ppo_self_driving_continuous --episodes 20 --mode headless
+```
 
 # Comprehensive evaluation
+```
 python evaluate_model.py --model models/ppo_self_driving_continuous --episodes 50
+```
 
 # Compare multiple models
+```
 python test_model.py --mode compare --models models/ppo_self_driving_continuous models/ppo_self_driving_discrete
-
+```
 
