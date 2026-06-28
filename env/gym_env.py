@@ -59,9 +59,23 @@ class SelfDrivingEnv(gym.Env):
         # Enhanced observation space with more information
         if self.enhanced_observations:
             # 5 ray distances + speed + angle + position + angular_velocity + previous_action + progress + corner_info
-            # 5 + 1 + 2 + 2 + 1 + 3 + 1 + 2 = 17 dimensions
-            low = np.array([0.0] * 5 + [0.0, -1.0, -1.0, 0.0, 0.0, -1.0, -1.0, -1.0, 0.0, 0.0, 0.0, 0.0], dtype=np.float32)
-            high = np.array([1.0] * 5 + [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], dtype=np.float32)
+            # Discrete: 5 + 1 + 2 + 2 + 1 + 1 + 1 + 2 = 15 dimensions
+            # Continuous: 5 + 1 + 2 + 2 + 1 + 3 + 1 + 2 = 17 dimensions
+            prev_action_dim = 3 if self.continuous else 1
+            low = np.array(
+                [0.0] * 5 +
+                [0.0, -1.0, -1.0, 0.0, 0.0, -1.0] +
+                [-1.0] * prev_action_dim +
+                [0.0, 0.0, 0.0],
+                dtype=np.float32
+            )
+            high = np.array(
+                [1.0] * 5 +
+                [1.0, 1.0, 1.0, 1.0, 1.0, 1.0] +
+                [1.0] * prev_action_dim +
+                [1.0, 1.0, 1.0],
+                dtype=np.float32
+            )
         else:
             # Original observation space for backward compatibility
             # 5 ray distances + speed + angle + position = 10 dimensions

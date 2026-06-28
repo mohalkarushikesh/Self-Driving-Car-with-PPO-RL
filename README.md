@@ -102,7 +102,7 @@ git clone https://github.com/mohalkarushikesh/Self-Driving-Car-with-PPO-RL.git
 cd Self-Driving-Car
 
 # Create virtual environment
-python -m venv venv
+python3 -m venv venv
 
 # Activate virtual environment
 # Windows:
@@ -123,12 +123,14 @@ python -m env.main
 
 ### 3. Training a Model
 
-```bash
-# Train with continuous actions (recommended)
-python train_ppo.py --continuous
+> Recommended: start with the discrete action model first. Once the environment is stable and training works reliably, switch to continuous actions for smoother control.
 
-# Train with discrete actions
+```bash
+# Train with discrete actions first
 python train_ppo.py
+
+# Train with continuous actions after you have a stable baseline
+python train_ppo.py --continuous
 
 # Train with enhanced observations
 python train_ppo.py --continuous --enhanced
@@ -349,4 +351,4 @@ Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without ...
 
-Full text available at {Open Source Initiative https://opensource.org/license/mit}
+Full text available at Open Source Initiative https://opensource.org/license/mit

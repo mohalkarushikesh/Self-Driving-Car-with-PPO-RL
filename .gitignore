@@ -1,4 +1,8 @@
 # Ignore the models directory where trained models are saved
 
 /models/
-
+/venv/
+# Ignore Python build/cache artifacts
+__pycache__/
+*.py[cod]
+*$py.class

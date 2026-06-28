@@ -10,22 +10,37 @@ import pygame
 from stable_baselines3 import PPO
 from env.gym_env import SelfDrivingEnv
 
-def demo_model(model_path, continuous=None, visualize_sensors=True, num_episodes=1, enhanced=True):
+def demo_model(model_path, continuous=None, visualize_sensors=True, num_episodes=1, enhanced=None):
     """
     Quick visual demo of a trained model.
     """
     print(f"🎬 Demo: {model_path}")
     
-    # Load model first to detect action space
+    # Load model first to detect action space and observation shape
     model = PPO.load(model_path)
     
     # Auto-detect action space from model
     if continuous is None:
-        # Check if model was trained with continuous actions
         if hasattr(model.action_space, 'shape') and len(model.action_space.shape) > 0:
             continuous = True
         else:
             continuous = False
+
+    # Infer enhanced observation usage from the saved model if not specified
+    if enhanced is None:
+        obs_space = None
+        if hasattr(model, 'observation_space') and getattr(model.observation_space, 'shape', None) is not None:
+            obs_space = model.observation_space
+        elif hasattr(model, 'policy') and hasattr(model.policy, 'observation_space'):
+            obs_space = model.policy.observation_space
+
+        if obs_space is not None:
+            obs_shape = obs_space.shape
+            if len(obs_shape) == 2:
+                obs_shape = obs_shape[-1]
+            enhanced = obs_shape != 10
+        else:
+            enhanced = False
     
     print(f"🔧 Action space: {'Continuous' if continuous else 'Discrete'}")
     print(f"🔧 Enhanced observations: {'Yes' if enhanced else 'No'}")
@@ -35,7 +50,7 @@ def demo_model(model_path, continuous=None, visualize_sensors=True, num_episodes
         render_mode="human",
         continuous=continuous,
         visualize_sensors=visualize_sensors,
-        enhanced_observations=enhanced  # Use enhanced observations to match training
+        enhanced_observations=enhanced
     )
     
     print(f"🎮 Running {num_episodes} episode(s)...")
@@ -97,7 +112,10 @@ def main():
     parser.add_argument("--continuous", action="store_true", help="Use continuous actions")
     parser.add_argument("--discrete", action="store_true", help="Use discrete actions")
     parser.add_argument("--no-sensors", action="store_true", help="Don't visualize sensors")
-    parser.add_argument("--no-enhanced", action="store_true", help="Don't use enhanced observations")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--enhanced", dest="enhanced", action="store_true", help="Use enhanced observations")
+    group.add_argument("--no-enhanced", dest="enhanced", action="store_false", help="Don't use enhanced observations")
+    parser.set_defaults(enhanced=None)
     
     args = parser.parse_args()
     
@@ -109,7 +127,7 @@ def main():
         continuous = False
     
     # Determine enhanced observations
-    enhanced = not args.no_enhanced
+    enhanced = args.enhanced
     
     demo_model(
         args.model,

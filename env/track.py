@@ -9,14 +9,16 @@ class Track:
         # Initialize pygame for image loading (even in headless mode)
         if not pygame.get_init():
             if headless:
-                # Set dummy video driver for headless mode
                 os.environ['SDL_VIDEODRIVER'] = 'dummy'
             pygame.init()
-            
-        # Only create display surface if not headless
-        if not self.headless and pygame.display.get_surface() is None:
-            pygame.display.set_mode((width, height))
-        
+
+        # Ensure a display surface exists before converting loaded images
+        if pygame.display.get_surface() is None:
+            if headless:
+                pygame.display.set_mode((1, 1))
+            else:
+                pygame.display.set_mode((width, height))
+
         # Resolve track path - check if it's a relative path and look in images folder
         if not os.path.isabs(track_path):
             # If it's a relative path, try to find it in the images directory

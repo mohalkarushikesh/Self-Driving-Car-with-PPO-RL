@@ -14,9 +14,13 @@ class Car:
                 os.environ['SDL_VIDEODRIVER'] = 'dummy'
             pygame.init()
             
-        # Create a minimal display surface for image conversion
-        if pygame.display.get_surface() is None:
-            pygame.display.set_mode((1, 1))  # Minimal display for image conversion
+        # Create a minimal display surface only when a real window is needed.
+        # In headless/training mode, this can crash under WSL/SDL and is not required.
+        if not self.headless and pygame.display.get_surface() is None:
+            try:
+                pygame.display.set_mode((1, 1))  # Minimal display for image conversion
+            except pygame.error:
+                pass
         
         # Load car image (even in headless mode for collision detection)
         images_dir = os.path.join(os.path.dirname(__file__), "..", "images")
